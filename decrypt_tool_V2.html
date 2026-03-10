@@ -30,6 +30,41 @@
             margin: 0;
             padding: 20px;
             box-sizing: border-box;
+            position: relative; /* 为右上角绝对定位提供参照 */
+        }
+
+        /* 👉 新增：右上角使用说明按钮样式 */
+        .help-link {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            text-decoration: none;
+            font-weight: 600;
+            background-color: var(--card-bg);
+            padding: 8px 16px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 100;
+        }
+        .help-link:hover {
+            color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        /* 移动端适配 */
+        @media (max-width: 600px) {
+            .help-link {
+                top: 15px;
+                right: 15px;
+                padding: 6px 12px;
+                font-size: 0.85rem;
+            }
         }
 
         .container {
@@ -135,6 +170,10 @@
     </style>
 </head>
 <body>
+
+    <a href="https://github.com/sunyewei/Browser_Decrypt_Tool_VibeCoding#readme" target="_blank" class="help-link">
+        📖 使用说明
+    </a>
 
     <div class="container">
         <h2>📂 批量文件加解密工具</h2>
