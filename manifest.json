@@ -1,6 +1,6 @@
 {
   "name": "AES-256 离线批量加解密工具",
-  "short_name": "加解密工具",
+  "short_name": "为宝的 AES-256 加解密工具",
   "description": "基于 Vibe-Coding 打造的本地纯前端文件加解密神器",
   "start_url": "./decrypt_tool_V2.html",
   "display": "standalone",
@@ -8,15 +8,15 @@
   "theme_color": "#4F46E5",
   "icons": [
     {
-      "src": "./icon.svg", 
+      "src": "./icon_alt_192.png", 
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icon.svg",
+      "src": "./icon_alt_512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     }
   ],
