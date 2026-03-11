@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vibe-crypto-tool-v2';
+const CACHE_NAME = 'vibe-crypto-tool-v3';
 const urlsToCache = [
   './',
   './decrypt_tool_V2.html',
