@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vibe-crypto-tool-v8'; // 👈 改个新版本号
+const CACHE_NAME = 'vibe-crypto-tool-v9'; // 👈 改个新版本号
 const urlsToCache = [
   './',
   './decrypt_tool_V2.html',
