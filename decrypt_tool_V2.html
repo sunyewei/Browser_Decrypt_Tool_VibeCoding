@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AES-256 离线批量加解密工具 (Vibe-Coding版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4F46E5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon.svg">
     <style>
         :root {
             --primary: #4F46E5;
@@ -33,7 +39,7 @@
             position: relative; /* 为右上角绝对定位提供参照 */
         }
 
-        /* 👉 新增：右上角使用说明按钮样式 */
+        /* 👉 右上角使用说明按钮样式 */
         .help-link {
             position: absolute;
             top: 20px;
@@ -474,6 +480,16 @@
             const statusDiv = document.getElementById("status-main");
             statusDiv.innerText = text;
             statusDiv.style.color = color;
+        }
+    </script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('✅ ServiceWorker 注册成功，作用域为:', reg.scope))
+                    .catch(err => console.log('❌ ServiceWorker 注册失败:', err));
+            });
         }
     </script>
 </body>

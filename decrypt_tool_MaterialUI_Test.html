@@ -3,218 +3,305 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AES-256 离线批量加解密工具 (Vibe-Coding版)</title>
+    <title>AES-256 离线批量加解密工具 (Material版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
     
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4F46E5">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="icon.svg">
     <style>
+        /* Material Design 3 Color Tokens */
         :root {
-            --primary: #4F46E5;
-            --primary-hover: #4338CA;
-            --success: #10B981;
-            --success-hover: #059669;
-            --bg: #F3F4F6;
-            --card-bg: #FFFFFF;
-            --text-main: #1F2937;
-            --text-muted: #6B7280;
-            --border: #D1D5DB;
+            --md-primary: #6750A4;
+            --md-on-primary: #FFFFFF;
+            --md-primary-container: #EADDFF;
+            --md-on-primary-container: #21005D;
+            --md-secondary: #625B71;
+            --md-background: #F4EFF4;
+            --md-surface: #FEF7FF;
+            --md-surface-variant: #E7E0EC;
+            --md-on-surface: #1D1B20;
+            --md-on-surface-variant: #49454F;
+            --md-outline: #79747E;
+            --md-error: #B3261E;
+            --md-success: #146C2E;
+            --md-success-container: #C4EED0;
+            --md-elevation-1: 0px 1px 3px 1px rgba(0,0,0,0.15), 0px 1px 2px 0px rgba(0,0,0,0.3);
+            --md-elevation-2: 0px 2px 6px 2px rgba(0,0,0,0.15), 0px 1px 2px 0px rgba(0,0,0,0.3);
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background-color: var(--md-background);
+            color: var(--md-on-surface);
             display: flex;
-            flex-direction: column; /* 让主体和底部署名垂直排列 */
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            padding: 20px;
+            padding: 24px;
             box-sizing: border-box;
-            position: relative; /* 为右上角绝对定位提供参照 */
+            position: relative;
         }
 
-        /* 👉 右上角使用说明按钮样式 */
+        /* 右上角 Help 按钮 (Material Chip 风格) */
         .help-link {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 0.9rem;
-            color: var(--text-main);
+            top: 24px;
+            right: 24px;
+            font-size: 0.875rem;
+            color: var(--md-on-surface-variant);
             text-decoration: none;
-            font-weight: 600;
-            background-color: var(--card-bg);
+            font-weight: 500;
+            background-color: var(--md-surface);
             padding: 8px 16px;
-            border-radius: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            transition: all 0.2s ease;
+            border-radius: 8px;
+            border: 1px solid var(--md-outline);
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            transition: all 0.2s ease;
             z-index: 100;
         }
         .help-link:hover {
-            color: var(--primary);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            background-color: var(--md-surface-variant);
+            color: var(--md-on-surface);
         }
-        /* 移动端适配 */
+        .help-link .material-icons-outlined { font-size: 18px; }
+
         @media (max-width: 600px) {
-            .help-link {
-                top: 15px;
-                right: 15px;
-                padding: 6px 12px;
-                font-size: 0.85rem;
-            }
+            .help-link { top: 16px; right: 16px; padding: 6px 12px; font-size: 0.8rem; }
         }
 
+        /* 主卡片 (Material Surface) */
         .container {
-            background-color: var(--card-bg);
-            padding: 2.5rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            background-color: var(--md-surface);
+            padding: 32px;
+            border-radius: 24px;
+            box-shadow: var(--md-elevation-1);
             width: 100%;
-            max-width: 550px;
+            max-width: 560px;
             text-align: center;
+            transition: box-shadow 0.3s ease;
+        }
+        .container:hover {
+            box-shadow: var(--md-elevation-2);
         }
 
-        h2 { margin-top: 0; margin-bottom: 1.5rem; font-weight: 600; }
+        h2 { 
+            margin-top: 0; 
+            margin-bottom: 24px; 
+            font-weight: 500; 
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: var(--md-primary);
+        }
+
+        .input-group { margin-bottom: 24px; text-align: left; }
         
-        .input-group { margin-bottom: 1.2rem; text-align: left; }
-        label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500; color: var(--text-muted); }
-        
+        label { 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            margin-bottom: 8px; 
+            font-size: 0.875rem; 
+            font-weight: 500; 
+            color: var(--md-on-surface-variant); 
+        }
+
+        /* Material Outlined Text Field */
         input[type="password"] {
-            width: 100%; padding: 0.75rem; border: 1px solid var(--border);
-            border-radius: 8px; box-sizing: border-box; font-size: 1rem; transition: border-color 0.2s;
+            width: 100%; 
+            padding: 14px 16px; 
+            border: 1px solid var(--md-outline);
+            background-color: transparent;
+            border-radius: 4px; 
+            box-sizing: border-box; 
+            font-size: 1rem; 
+            color: var(--md-on-surface);
+            transition: all 0.2s;
+            font-family: inherit;
         }
-        input[type="password"]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
+        input[type="password"]:hover { border-color: var(--md-on-surface); }
+        input[type="password"]:focus { 
+            outline: none; 
+            border-color: var(--md-primary); 
+            border-width: 2px;
+            padding: 13px 15px; /* 补偿边框增粗带来的偏移 */
+        }
 
-        .pwd-strength-container { margin-top: 0.5rem; height: 6px; background-color: var(--border); border-radius: 3px; overflow: hidden; }
+        /* 密码强度条 */
+        .pwd-strength-container { margin-top: 8px; height: 4px; background-color: var(--md-surface-variant); border-radius: 2px; overflow: hidden; }
         .pwd-strength-bar { height: 100%; width: 0%; transition: width 0.3s ease, background-color 0.3s ease; }
-        .pwd-text { font-size: 0.8rem; margin-top: 0.25rem; text-align: right; font-weight: 500; }
+        .pwd-text { font-size: 0.75rem; margin-top: 4px; text-align: right; font-weight: 500; }
 
+        /* 拖拽区 (Material 风格) */
         .drop-zone {
-            width: 100%; padding: 2rem 1rem; border: 2px dashed var(--border);
-            border-radius: 8px; box-sizing: border-box; text-align: center;
-            cursor: pointer; transition: all 0.2s ease; background-color: var(--bg);
+            width: 100%; padding: 32px 16px; 
+            border: 2px dashed var(--md-outline);
+            border-radius: 12px; box-sizing: border-box; text-align: center;
+            cursor: pointer; transition: all 0.2s ease; 
+            background-color: transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
         }
-        .drop-zone:hover, .drop-zone.dragover { border-color: var(--primary); background-color: rgba(79, 70, 229, 0.05); }
-        .drop-zone p { margin: 0; color: var(--text-muted); font-size: 0.95rem; pointer-events: none; }
+        .drop-zone .material-icons-outlined { font-size: 36px; color: var(--md-primary); }
+        .drop-zone:hover, .drop-zone.dragover { 
+            border-color: var(--md-primary); 
+            background-color: var(--md-primary-container); 
+        }
+        .drop-zone p { margin: 0; color: var(--md-on-surface-variant); font-size: 0.875rem; pointer-events: none; font-weight: 500; }
 
+        /* 列表头部 */
         .list-header {
             display: flex; justify-content: space-between; align-items: center; 
-            margin-top: 0.8rem; display: none;
+            margin-top: 16px; display: none;
         }
-        .list-header span { font-size: 0.85rem; font-weight: 600; color: var(--primary); }
+        .list-header span { font-size: 0.875rem; font-weight: 500; color: var(--md-primary); }
+        
+        /* Material Text Button */
         .clear-btn {
-            background: none; border: none; color: #EF4444; font-size: 0.85rem; 
-            cursor: pointer; padding: 0; font-weight: 500;
+            background: none; border: none; color: var(--md-error); font-size: 0.875rem; 
+            cursor: pointer; padding: 6px 8px; font-weight: 500; border-radius: 4px;
+            display: flex; align-items: center; gap: 4px; transition: background 0.2s;
         }
-        .clear-btn:hover { text-decoration: underline; }
+        .clear-btn:hover { background-color: rgba(179, 38, 30, 0.08); }
+        .clear-btn .material-icons-outlined { font-size: 16px; }
 
+        /* 文件列表 */
         .file-list {
-            max-height: 250px; overflow-y: auto; margin-top: 0.5rem;
-            text-align: left; border: 1px solid var(--border); border-radius: 8px;
-            background: var(--bg); display: none;
+            max-height: 250px; overflow-y: auto; margin-top: 8px;
+            text-align: left; border: 1px solid var(--md-surface-variant); border-radius: 12px;
+            background: transparent; display: none;
         }
         
         .file-item {
-            padding: 0.75rem; border-bottom: 1px dashed var(--border); font-size: 0.85rem; position: relative;
+            padding: 12px 16px; border-bottom: 1px solid var(--md-surface-variant); font-size: 0.875rem; position: relative;
         }
         .file-item:last-child { border-bottom: none; }
         
-        .file-name { font-weight: 600; color: var(--text-main); word-break: break-all; margin-bottom: 4px; padding-right: 90px;}
-        .file-hash { font-family: monospace; color: var(--text-muted); word-break: break-all; margin-bottom: 2px;}
+        .file-name { font-weight: 500; color: var(--md-on-surface); word-break: break-all; margin-bottom: 4px; padding-right: 90px;}
+        .file-hash { font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: var(--md-on-surface-variant); word-break: break-all; margin-bottom: 2px;}
         
-        .file-status { position: absolute; right: 4.5rem; top: 0.8rem; font-weight: bold; font-size: 0.8rem; transition: color 0.2s ease; }
-        
+        .file-status { position: absolute; right: 3.5rem; top: 12px; font-weight: 500; font-size: 0.75rem; transition: color 0.2s ease; display: flex; align-items: center; gap: 4px;}
+        .file-status .material-icons-outlined { font-size: 14px; }
+
+        /* Material Icon Button (删除) */
         .delete-btn {
-            position: absolute; right: 0.5rem; top: 0.65rem; background: none; border: none; 
-            color: #EF4444; font-size: 0.85rem; font-weight: 600; cursor: pointer; 
-            padding: 4px 6px; border-radius: 4px; line-height: 1; transition: background-color 0.2s;
+            position: absolute; right: 8px; top: 8px; background: none; border: none; 
+            color: var(--md-error); cursor: pointer; 
+            padding: 6px; border-radius: 50%; line-height: 1; transition: background-color 0.2s;
         }
-        .delete-btn:hover:not(:disabled) { background-color: #FEE2E2; }
-        .delete-btn:disabled { color: var(--border); cursor: not-allowed; }
+        .delete-btn:hover:not(:disabled) { background-color: rgba(179, 38, 30, 0.08); }
+        .delete-btn:disabled { color: var(--md-outline); cursor: not-allowed; }
+        .delete-btn .material-icons-outlined { font-size: 20px; }
 
-        .btn-group { display: flex; gap: 1rem; margin-top: 1.5rem; }
+        /* 按钮组 */
+        .btn-group { display: flex; gap: 16px; margin-top: 32px; }
+        
+        /* Material Filled Button */
         button.action-btn {
-            flex: 1; padding: 0.75rem; border: none; border-radius: 8px; font-size: 1rem;
-            font-weight: 600; color: white; cursor: pointer; transition: background-color 0.2s, transform 0.1s;
+            flex: 1; padding: 12px 24px; border: none; border-radius: 100px; /* 胶囊形 */
+            font-size: 0.95rem; font-weight: 500; font-family: inherit;
+            cursor: pointer; transition: all 0.2s;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+            box-shadow: 0px 1px 2px 0px rgba(0,0,0,0.3), 0px 1px 3px 1px rgba(0,0,0,0.15);
         }
-        button.action-btn:active { transform: scale(0.98); }
-        button.action-btn:disabled { background-color: var(--border) !important; cursor: not-allowed; transform: none; }
-        .btn-encrypt { background-color: var(--primary); }
-        .btn-encrypt:hover:not(:disabled) { background-color: var(--primary-hover); }
-        .btn-decrypt { background-color: var(--success); }
-        .btn-decrypt:hover:not(:disabled) { background-color: var(--success-hover); }
+        button.action-btn:hover:not(:disabled) {
+            box-shadow: 0px 1px 2px 0px rgba(0,0,0,0.3), 0px 2px 6px 2px rgba(0,0,0,0.15);
+        }
+        button.action-btn:active:not(:disabled) {
+            box-shadow: 0px 1px 2px 0px rgba(0,0,0,0.3), 0px 1px 3px 1px rgba(0,0,0,0.15);
+            transform: scale(0.98);
+        }
+        button.action-btn:disabled { 
+            background-color: rgba(29, 27, 32, 0.12) !important; 
+            color: rgba(29, 27, 32, 0.38) !important;
+            box-shadow: none; cursor: not-allowed; 
+        }
+        
+        .btn-encrypt { background-color: var(--md-primary); color: var(--md-on-primary); }
+        .btn-encrypt:hover:not(:disabled) { background-color: #725FA6; /* M3 hover state overlay */ }
+        
+        .btn-decrypt { background-color: var(--md-success); color: white; }
+        .btn-decrypt:hover:not(:disabled) { background-color: #197B34; }
 
-        .status-main { margin-top: 1.5rem; font-size: 0.95rem; min-height: 20px; font-weight: 600; transition: color 0.2s ease; }
+        .status-main { 
+            margin-top: 24px; font-size: 0.9rem; min-height: 20px; 
+            font-weight: 500; transition: color 0.2s ease;
+            display: flex; justify-content: center; align-items: center; gap: 6px;
+        }
 
-        /* 底部署名栏样式 */
+        /* 底部版权 */
         .footer-credit {
-            margin-top: 1.5rem;
-            font-size: 0.85rem;
-            color: var(--text-muted);
+            margin-top: 24px;
+            font-size: 0.8rem;
+            color: var(--md-on-surface-variant);
             text-align: center;
-            font-weight: 500;
+            font-weight: 400;
         }
         .footer-credit a {
-            color: var(--primary);
+            color: var(--md-primary);
             text-decoration: none;
-            font-weight: 600;
+            font-weight: 500;
             transition: color 0.2s;
         }
-        .footer-credit a:hover {
-            color: var(--primary-hover);
-            text-decoration: underline;
-        }
+        .footer-credit a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
-    <a href="https://github.com/Vault042/Browser_Decrypt_Tool_VibeCoding#readme" target="_blank" class="help-link">
-        📖 使用说明
+    <a href="https://github.com/你的GitHub用户名/你的仓库名#readme" target="_blank" class="help-link">
+        <span class="material-icons-outlined">help_outline</span>
+        使用说明
     </a>
 
     <div class="container">
-        <h2>📂 批量文件加解密工具</h2>
+        <h2><span class="material-icons-outlined" style="font-size: 28px;">security</span> 文件质感加解密工具</h2>
         
         <div class="input-group">
-            <label for="pwd">加解密密码</label>
+            <label for="pwd"><span class="material-icons-outlined" style="font-size: 18px;">key</span> 加解密密码</label>
             <input type="password" id="pwd" placeholder="请输入高强度密码">
             <div class="pwd-strength-container"><div class="pwd-strength-bar" id="pwd-bar"></div></div>
             <div class="pwd-text" id="pwd-text"></div>
         </div>
 
         <div class="input-group">
-            <label>选择文件 (支持多次拖拽累加)</label>
+            <label><span class="material-icons-outlined" style="font-size: 18px;">folder_open</span> 选择文件 (支持多次拖拽累加)</label>
             <div id="drop-zone" class="drop-zone">
+                <span class="material-icons-outlined">cloud_upload</span>
                 <p id="drop-text">点击选择文件，或框选多个拖拽到此处</p>
                 <input type="file" id="file" multiple style="display: none;">
             </div>
             
             <div class="list-header" id="list-header">
                 <span id="file-count">已添加 0 个文件</span>
-                <button class="clear-btn" onclick="clearFiles()">清空列表</button>
+                <button class="clear-btn" onclick="clearFiles()">
+                    <span class="material-icons-outlined">delete_sweep</span>清空
+                </button>
             </div>
             <div id="file-list" class="file-list"></div>
         </div>
 
         <div class="btn-group">
-            <button class="action-btn btn-encrypt" id="btn-enc" onclick="processAll(true)">批量加密</button>
-            <button class="action-btn btn-decrypt" id="btn-dec" onclick="processAll(false)">批量解密</button>
+            <button class="action-btn btn-encrypt" id="btn-enc" onclick="processAll(true)">
+                <span class="material-icons-outlined">lock</span>批量加密
+            </button>
+            <button class="action-btn btn-decrypt" id="btn-dec" onclick="processAll(false)">
+                <span class="material-icons-outlined">lock_open</span>批量解密
+            </button>
         </div>
 
         <div class="status-main" id="status-main"></div>
     </div>
 
     <div class="footer-credit">
-        Code with 💻 by <a href="https://github.com/Vault042/Browser_Decrypt_Tool_VibeCoding" target="_blank">Yewei Sun</a> | Vibe-Coding 呈现
+        Code with <span class="material-icons-outlined" style="font-size: 12px; vertical-align: middle;">computer</span> by <a href="https://github.com/你的GitHub用户名" target="_blank">Yewei Sun</a> | Vibe-Coding 呈现
     </div>
 
     <script>
@@ -236,11 +323,11 @@
             if (/[^A-Za-z0-9]/.test(pwd)) score++;
 
             if (score <= 2) {
-                bar.style.width = '33%'; bar.style.backgroundColor = '#ef4444'; text.innerText = '强度: 弱'; text.style.color = '#ef4444';
+                bar.style.width = '33%'; bar.style.backgroundColor = 'var(--md-error)'; text.innerText = '强度: 弱'; text.style.color = 'var(--md-error)';
             } else if (score <= 4) {
-                bar.style.width = '66%'; bar.style.backgroundColor = '#f59e0b'; text.innerText = '强度: 中等'; text.style.color = '#f59e0b';
+                bar.style.width = '66%'; bar.style.backgroundColor = '#E6A23C'; text.innerText = '强度: 中等'; text.style.color = '#E6A23C';
             } else {
-                bar.style.width = '100%'; bar.style.backgroundColor = '#10b981'; text.innerText = '强度: 高'; text.style.color = '#10b981';
+                bar.style.width = '100%'; bar.style.backgroundColor = 'var(--md-success)'; text.innerText = '强度: 高'; text.style.color = 'var(--md-success)';
             }
         });
 
@@ -269,28 +356,22 @@
             validFiles.forEach(f => {
                 currentFiles.push({
                     file: f, inHash: null, encHash: null, decHash: null,
-                    statusText: "等待中", statusColor: "var(--text-muted)"
+                    statusText: "等待中", statusColor: "var(--md-on-surface-variant)", icon: "schedule"
                 });
             });
             updateUIState();
             renderFileList();
-            showMainStatus(`✅ 已添加 ${validFiles.length} 个文件`, "var(--success)");
+            showMainStatus(`✅ 已添加 ${validFiles.length} 个文件`, "var(--md-success)");
         }
 
         function removeFile(index) {
             if (isProcessing) return;
-            
             const removedName = currentFiles[index].file.name;
             currentFiles.splice(index, 1);
-            
             updateUIState();
-            if (currentFiles.length === 0) {
-                clearFiles(true);
-            } else {
-                renderFileList();
-            }
-            
-            showMainStatus(`✅ 已移除: ${removedName}`, "var(--success)");
+            if (currentFiles.length === 0) clearFiles(true);
+            else renderFileList();
+            showMainStatus(`✅ 已移除: ${removedName}`, "var(--md-success)");
         }
 
         function clearFiles(keepStatus = false) {
@@ -298,9 +379,7 @@
             currentFiles = [];
             updateUIState();
             document.getElementById('file-list').innerHTML = '';
-            if (!keepStatus) {
-                showMainStatus("✅ 列表已清空", "var(--success)");
-            }
+            if (!keepStatus) showMainStatus("✅ 列表已清空", "var(--md-success)");
         }
 
         function updateUIState() {
@@ -325,13 +404,17 @@
                 
                 itemDiv.innerHTML = `
                     <div class="file-name">${i + 1}. ${item.file.name}</div>
-                    <div class="file-status" style="color: ${item.statusColor}">${item.statusText}</div>
-                    <button class="delete-btn" onclick="removeFile(${i})" title="移除此文件" ${isProcessing ? 'disabled' : ''}>&times; 删除</button>
+                    <div class="file-status" style="color: ${item.statusColor}">
+                        <span class="material-icons-outlined">${item.icon}</span> ${item.statusText}
+                    </div>
+                    <button class="delete-btn" onclick="removeFile(${i})" title="移除此文件" ${isProcessing ? 'disabled' : ''}>
+                        <span class="material-icons-outlined">close</span>
+                    </button>
                     
                     <div class="file-hash">原始指纹: <span id="in-hash-${i}">${item.inHash || '计算中...'}</span></div>
                     
-                    ${item.encHash ? `<div class="file-hash" style="color: var(--primary);">加密后指纹: <span>${item.encHash}</span></div>` : ''}
-                    ${item.decHash ? `<div class="file-hash" style="color: var(--success);">解密后指纹: <span>${item.decHash}</span></div>` : ''}
+                    ${item.encHash ? `<div class="file-hash" style="color: var(--md-primary);">加密后指纹: <span>${item.encHash}</span></div>` : ''}
+                    ${item.decHash ? `<div class="file-hash" style="color: var(--md-success);">解密后指纹: <span>${item.decHash}</span></div>` : ''}
                 `;
                 container.appendChild(itemDiv);
 
@@ -363,7 +446,7 @@
             const btns = document.querySelectorAll('.action-btn');
 
             if (!pwdInput || currentFiles.length === 0) {
-                showMainStatus("⚠️ 请填写密码并至少添加一个文件", "red");
+                showMainStatus(`<span class="material-icons-outlined">warning</span> 请填写密码并至少添加一个文件`, "var(--md-error)");
                 return;
             }
 
@@ -371,7 +454,7 @@
             btns.forEach(btn => btn.disabled = true);
             renderFileList(); 
 
-            showMainStatus(`⏳ 正在处理 ${currentFiles.length} 个文件，请稍候...`, "var(--text-muted)");
+            showMainStatus(`<span class="material-icons-outlined" style="animation: spin 2s linear infinite;">hourglass_empty</span> 正在处理 ${currentFiles.length} 个文件，请稍候...`, "var(--md-on-surface-variant)");
 
             let successCount = 0;
             let failCount = 0;
@@ -379,7 +462,7 @@
             let zip = null;
             if (isEncrypt && currentFiles.length > 1) {
                 if (typeof JSZip === 'undefined') {
-                    showMainStatus("⚠️ 网络不稳定或离线，将放弃ZIP打包，为您逐一输出...", "#F59E0B");
+                    showMainStatus(`<span class="material-icons-outlined">wifi_off</span> 网络离线，放弃ZIP打包，逐一输出...`, "#E6A23C");
                     await new Promise(r => setTimeout(r, 1500));
                 } else {
                     zip = new JSZip();
@@ -388,8 +471,9 @@
 
             for (let i = 0; i < currentFiles.length; i++) {
                 const item = currentFiles[i];
-                item.statusText = "处理中...";
-                item.statusColor = "var(--primary)";
+                item.statusText = "处理中";
+                item.icon = "sync";
+                item.statusColor = "var(--md-primary)";
                 renderFileList(); 
 
                 try {
@@ -434,24 +518,24 @@
                         a.click();
                         URL.revokeObjectURL(url);
 
-                        if (currentFiles.length > 1) {
-                            await new Promise(r => setTimeout(r, 400));
-                        }
+                        if (currentFiles.length > 1) await new Promise(r => setTimeout(r, 400));
                     }
 
-                    item.statusText = "✅ 成功";
-                    item.statusColor = "var(--success)";
+                    item.statusText = "成功";
+                    item.icon = "check_circle";
+                    item.statusColor = "var(--md-success)";
                     successCount++;
                 } catch (error) {
-                    item.statusText = "❌ 失败";
-                    item.statusColor = "red";
+                    item.statusText = "失败";
+                    item.icon = "error";
+                    item.statusColor = "var(--md-error)";
                     failCount++;
                 }
                 renderFileList();
             }
 
             if (zip && successCount > 0) {
-                showMainStatus(`⏳ 正在将 ${successCount} 个加密文件打包为 ZIP...`, "var(--primary)");
+                showMainStatus(`<span class="material-icons-outlined">archive</span> 正在打包 ZIP...`, "var(--md-primary)");
                 try {
                     const zipBlob = await zip.generateAsync({ type: "blob", compression: "STORE" });
                     const zipUrl = URL.createObjectURL(zipBlob);
@@ -461,7 +545,7 @@
                     a.click();
                     URL.revokeObjectURL(zipUrl);
                 } catch (e) {
-                    showMainStatus("❌ ZIP打包失败，可能是文件过大导致内存不足", "red");
+                    showMainStatus(`<span class="material-icons-outlined">error</span> ZIP打包失败`, "var(--md-error)");
                 }
             }
 
@@ -470,26 +554,16 @@
             renderFileList(); 
 
             if (failCount === 0) {
-                showMainStatus(`✅ 全部完成！共处理并输出 ${successCount} 个文件。`, "var(--success)");
+                showMainStatus(`<span class="material-icons-outlined">task_alt</span> 全部完成！输出 ${successCount} 个文件。`, "var(--md-success)");
             } else {
-                showMainStatus(`⚠️ 处理结束。成功: ${successCount} 个，失败: ${failCount} 个 (密码错误或文件损坏)`, "#f59e0b");
+                showMainStatus(`<span class="material-icons-outlined">warning</span> 处理结束。成功: ${successCount}，失败: ${failCount}`, "#E6A23C");
             }
         }
 
-        function showMainStatus(text, color) {
+        function showMainStatus(htmlText, color) {
             const statusDiv = document.getElementById("status-main");
-            statusDiv.innerText = text;
+            statusDiv.innerHTML = htmlText;
             statusDiv.style.color = color;
-        }
-    </script>
-    
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('✅ ServiceWorker 注册成功，作用域为:', reg.scope))
-                    .catch(err => console.log('❌ ServiceWorker 注册失败:', err));
-            });
         }
     </script>
 </body>
