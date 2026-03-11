@@ -1,9 +1,10 @@
 const CACHE_NAME = 'vibe-crypto-tool-v2';
 const urlsToCache = [
   './',
-  './index.html',
+  './decrypt_tool_V2.html',
   './manifest.json',
-  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js' // 把外网依赖也缓存下来，彻底离线可用
+  './icon.svg',
+  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
 ];
 
 // 安装阶段：预缓存核心资源
