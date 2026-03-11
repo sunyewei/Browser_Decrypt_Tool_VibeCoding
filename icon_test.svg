@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="gFolder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C7FFF" /> <stop offset="100%" stop-color="#312E81" /> </linearGradient>
+    
+    <linearGradient id="gLock" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4ADE80" /> <stop offset="100%" stop-color="#059669" /> </linearGradient>
+
+    <radialGradient id="gGlassShine" cx="50%" cy="0%" r="100%" fx="50%" fy="0%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.5"/>
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="gEdgeShine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.7"/>
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <filter id="fSoftShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="15" flood-color="#000000" flood-opacity="0.3" />
+    </filter>
+    
+    <clipPath id="cFolder">
+      <path d="M64 128c0-26.5 21.5-48 48-48h112l48 48h128c26.5 0 48 21.5 48 48v224c0 26.5-21.5 48-48 48H112c-26.5 0-48-21.5-48-48V128z" />
+    </clipPath>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#gFolder)"/>
+  
+  <rect width="512" height="512" fill="url(#gGlassShine)"/>
+
+  <g filter="url(#fSoftShadow)">
+    <path d="M64 128c0-26.5 21.5-48 48-48h112l48 48h128c26.5 0 48 21.5 48 48v224c0 26.5-21.5 48-48 48H112c-26.5 0-48-21.5-48-48V128z" fill="#000" opacity="0.1"/> <path d="M64 128c0-26.5 21.5-48 48-48h112l48 48h128c26.5 0 48 21.5 48 48v224c0 26.5-21.5 48-48 48H112c-26.5 0-48-21.5-48-48V128z" fill="url(#gFolder)"/>
+    
+    <path d="M112 80h112l48 48h128" fill="none" stroke="url(#gEdgeShine)" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <g filter="url(#fSoftShadow)">
+    <path d="M226 260v-30c0-16.5 13.5-30 30-30s30 13.5 30 30v30" fill="none" stroke="#D1FAE5" stroke-width="16" stroke-linecap="round"/>
+    <path d="M226 230c0-16.5 13.5-30 30-30s30 13.5 30 30" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+
+    <rect x="206" y="260" width="100" height="80" rx="16" fill="url(#gLock)"/>
+    <rect x="206" y="260" width="100" height="80" rx="16" fill="url(#gGlassShine)" opacity="0.3"/>
+    <rect x="208" y="262" width="96" height="76" rx="14" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+
+    <circle cx="256" cy="300" r="12" fill="#FFFFFF"/>
+    <path d="M256 312v16" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
+  </g>
+</svg>
