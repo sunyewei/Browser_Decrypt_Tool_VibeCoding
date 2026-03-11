@@ -1,6 +1,7 @@
 const CACHE_NAME = 'vibe-crypto-tool-v3';
 const urlsToCache = [
   './',
+  './index.html',
   './decrypt_tool_V2.html',
   './manifest.json',
   './icon.svg',
