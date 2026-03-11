@@ -2,17 +2,469 @@
 <html lang="zh-CN">
 <head>
     <meta charset="utf-8">
-    <title>正在跳转到加解密工具...</title>
-    <meta http-equiv="refresh" content="0; url=decrypt_tool_V2.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AES-256 离线批量加解密工具 (Vibe-Coding版)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
-    <script>
-        window.location.replace("decrypt_tool_V2.html");
-    </script>
+    <link rel="apple-touch-icon" href="icon.svg">
+    <meta name="theme-color" content="#4F46E5"> <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --success: #10B981;
+            --success-hover: #059669;
+            --bg: #F3F4F6;
+            --card-bg: #FFFFFF;
+            --text-main: #1F2937;
+            --text-muted: #6B7280;
+            --border: #D1D5DB;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .help-link {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            text-decoration: none;
+            font-weight: 600;
+            background-color: var(--card-bg);
+            padding: 8px 16px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 100;
+        }
+        .help-link:hover {
+            color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        @media (max-width: 600px) {
+            .help-link { top: 15px; right: 15px; padding: 6px 12px; font-size: 0.85rem; }
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 550px;
+            text-align: center;
+        }
+
+        h2 { margin-top: 0; margin-bottom: 1.5rem; font-weight: 600; }
+        
+        .input-group { margin-bottom: 1.2rem; text-align: left; }
+        label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500; color: var(--text-muted); }
+        
+        input[type="password"] {
+            width: 100%; padding: 0.75rem; border: 1px solid var(--border);
+            border-radius: 8px; box-sizing: border-box; font-size: 1rem; transition: border-color 0.2s;
+        }
+        input[type="password"]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
+
+        .pwd-strength-container { margin-top: 0.5rem; height: 6px; background-color: var(--border); border-radius: 3px; overflow: hidden; }
+        .pwd-strength-bar { height: 100%; width: 0%; transition: width 0.3s ease, background-color 0.3s ease; }
+        .pwd-text { font-size: 0.8rem; margin-top: 0.25rem; text-align: right; font-weight: 500; }
+
+        .drop-zone {
+            width: 100%; padding: 2rem 1rem; border: 2px dashed var(--border);
+            border-radius: 8px; box-sizing: border-box; text-align: center;
+            cursor: pointer; transition: all 0.2s ease; background-color: var(--bg);
+        }
+        .drop-zone:hover, .drop-zone.dragover { border-color: var(--primary); background-color: rgba(79, 70, 229, 0.05); }
+        .drop-zone p { margin: 0; color: var(--text-muted); font-size: 0.95rem; pointer-events: none; }
+
+        .list-header {
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-top: 0.8rem; display: none;
+        }
+        .list-header span { font-size: 0.85rem; font-weight: 600; color: var(--primary); }
+        .clear-btn {
+            background: none; border: none; color: #EF4444; font-size: 0.85rem; 
+            cursor: pointer; padding: 0; font-weight: 500;
+        }
+        .clear-btn:hover { text-decoration: underline; }
+
+        .file-list {
+            max-height: 250px; overflow-y: auto; margin-top: 0.5rem;
+            text-align: left; border: 1px solid var(--border); border-radius: 8px;
+            background: var(--bg); display: none;
+        }
+        
+        .file-item {
+            padding: 0.75rem; border-bottom: 1px dashed var(--border); font-size: 0.85rem; position: relative;
+        }
+        .file-item:last-child { border-bottom: none; }
+        
+        .file-name { font-weight: 600; color: var(--text-main); word-break: break-all; margin-bottom: 4px; padding-right: 90px;}
+        .file-hash { font-family: monospace; color: var(--text-muted); word-break: break-all; margin-bottom: 2px;}
+        
+        .file-status { position: absolute; right: 4.5rem; top: 0.8rem; font-weight: bold; font-size: 0.8rem; transition: color 0.2s ease; }
+        
+        .delete-btn {
+            position: absolute; right: 0.5rem; top: 0.65rem; background: none; border: none; 
+            color: #EF4444; font-size: 0.85rem; font-weight: 600; cursor: pointer; 
+            padding: 4px 6px; border-radius: 4px; line-height: 1; transition: background-color 0.2s;
+        }
+        .delete-btn:hover:not(:disabled) { background-color: #FEE2E2; }
+        .delete-btn:disabled { color: var(--border); cursor: not-allowed; }
+
+        .btn-group { display: flex; gap: 1rem; margin-top: 1.5rem; }
+        button.action-btn {
+            flex: 1; padding: 0.75rem; border: none; border-radius: 8px; font-size: 1rem;
+            font-weight: 600; color: white; cursor: pointer; transition: background-color 0.2s, transform 0.1s;
+        }
+        button.action-btn:active { transform: scale(0.98); }
+        button.action-btn:disabled { background-color: var(--border) !important; cursor: not-allowed; transform: none; }
+        .btn-encrypt { background-color: var(--primary); }
+        .btn-encrypt:hover:not(:disabled) { background-color: var(--primary-hover); }
+        .btn-decrypt { background-color: var(--success); }
+        .btn-decrypt:hover:not(:disabled) { background-color: var(--success-hover); }
+
+        .status-main { margin-top: 1.5rem; font-size: 0.95rem; min-height: 20px; font-weight: 600; transition: color 0.2s ease; }
+
+        .footer-credit {
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: center;
+            font-weight: 500;
+        }
+        .footer-credit a { color: var(--primary); text-decoration: none; font-weight: 600; transition: color 0.2s; }
+        .footer-credit a:hover { color: var(--primary-hover); text-decoration: underline; }
+    </style>
 </head>
 <body>
-    <div style="font-family: sans-serif; text-align: center; margin-top: 50px; color: #666;">
-        <p>正在努力为您加载工具，请稍候...</p>
-        <p>如果页面没有自动跳转，请 <a href="decrypt_tool_V2.html" style="color: #4F46E5;">点击这里</a>。</p>
+
+    <a href="https://github.com/Vault042/Browser_Decrypt_Tool_VibeCoding#readme" target="_blank" class="help-link">
+        📖 使用说明
+    </a>
+
+    <div class="container">
+        <h2>📂 批量文件加解密工具</h2>
+        
+        <div class="input-group">
+            <label for="pwd">加解密密码</label>
+            <input type="password" id="pwd" placeholder="请输入高强度密码">
+            <div class="pwd-strength-container"><div class="pwd-strength-bar" id="pwd-bar"></div></div>
+            <div class="pwd-text" id="pwd-text"></div>
+        </div>
+
+        <div class="input-group">
+            <label>选择文件 (支持多次拖拽累加)</label>
+            <div id="drop-zone" class="drop-zone">
+                <p id="drop-text">点击选择文件，或框选多个拖拽到此处</p>
+                <input type="file" id="file" multiple style="display: none;">
+            </div>
+            
+            <div class="list-header" id="list-header">
+                <span id="file-count">已添加 0 个文件</span>
+                <button class="clear-btn" onclick="clearFiles()">清空列表</button>
+            </div>
+            <div id="file-list" class="file-list"></div>
+        </div>
+
+        <div class="btn-group">
+            <button class="action-btn btn-encrypt" id="btn-enc" onclick="processAll(true)">批量加密</button>
+            <button class="action-btn btn-decrypt" id="btn-dec" onclick="processAll(false)">批量解密</button>
+        </div>
+
+        <div class="status-main" id="status-main"></div>
     </div>
+
+    <div class="footer-credit">
+        Code with 💻 by <a href="https://github.com/Vault042/Browser_Decrypt_Tool_VibeCoding" target="_blank">Yewei Sun</a> | Vibe-Coding 呈现
+    </div>
+
+    <script>
+        let currentFiles = []; 
+        let isProcessing = false;
+
+        document.getElementById('pwd').addEventListener('input', function(e) {
+            const pwd = e.target.value;
+            const bar = document.getElementById('pwd-bar');
+            const text = document.getElementById('pwd-text');
+            if (pwd.length === 0) { bar.style.width = '0'; text.innerText = ''; return; }
+
+            let score = 0;
+            if (pwd.length >= 8) score++;
+            if (pwd.length >= 12) score++;
+            if (/[A-Z]/.test(pwd)) score++;
+            if (/[a-z]/.test(pwd)) score++;
+            if (/[0-9]/.test(pwd)) score++;
+            if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+            if (score <= 2) {
+                bar.style.width = '33%'; bar.style.backgroundColor = '#ef4444'; text.innerText = '强度: 弱'; text.style.color = '#ef4444';
+            } else if (score <= 4) {
+                bar.style.width = '66%'; bar.style.backgroundColor = '#f59e0b'; text.innerText = '强度: 中等'; text.style.color = '#f59e0b';
+            } else {
+                bar.style.width = '100%'; bar.style.backgroundColor = '#10b981'; text.innerText = '强度: 高'; text.style.color = '#10b981';
+            }
+        });
+
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            document.body.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); });
+        });
+
+        dropZone.addEventListener('click', () => { if (!isProcessing) fileInput.click(); });
+        dropZone.addEventListener('dragover', () => { if (!isProcessing) dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
+        dropZone.addEventListener('drop', (e) => {
+            dropZone.classList.remove('dragover');
+            if (isProcessing) return;
+            const droppedFiles = e.dataTransfer ? Array.from(e.dataTransfer.files) : [];
+            if (droppedFiles.length > 0) addFiles(droppedFiles);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) { addFiles(Array.from(e.target.files)); fileInput.value = ''; }
+        });
+
+        function addFiles(newFiles) {
+            const validFiles = newFiles.filter(f => f.size > 0 || f.name.includes('.'));
+            validFiles.forEach(f => {
+                currentFiles.push({
+                    file: f, inHash: null, encHash: null, decHash: null,
+                    statusText: "等待中", statusColor: "var(--text-muted)"
+                });
+            });
+            updateUIState();
+            renderFileList();
+            showMainStatus(`✅ 已添加 ${validFiles.length} 个文件`, "var(--success)");
+        }
+
+        function removeFile(index) {
+            if (isProcessing) return;
+            const removedName = currentFiles[index].file.name;
+            currentFiles.splice(index, 1);
+            updateUIState();
+            if (currentFiles.length === 0) { clearFiles(true); } else { renderFileList(); }
+            showMainStatus(`✅ 已移除: ${removedName}`, "var(--success)");
+        }
+
+        function clearFiles(keepStatus = false) {
+            if (isProcessing) return;
+            currentFiles = [];
+            updateUIState();
+            document.getElementById('file-list').innerHTML = '';
+            if (!keepStatus) { showMainStatus("✅ 列表已清空", "var(--success)"); }
+        }
+
+        function updateUIState() {
+            document.getElementById('file-count').innerText = `已添加 ${currentFiles.length} 个文件`;
+            document.getElementById('list-header').style.display = currentFiles.length > 0 ? 'flex' : 'none';
+            document.getElementById('file-list').style.display = currentFiles.length > 0 ? 'block' : 'none';
+            document.getElementById('drop-text').innerText = currentFiles.length > 0 ? "可继续拖拽添加..." : "点击选择文件，或框选多个拖拽到此处";
+        }
+
+        async function calculateSHA256(arrayBuffer) {
+            const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function renderFileList() {
+            const container = document.getElementById('file-list');
+            container.innerHTML = '';
+            
+            currentFiles.forEach((item, i) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'file-item';
+                
+                itemDiv.innerHTML = `
+                    <div class="file-name">${i + 1}. ${item.file.name}</div>
+                    <div class="file-status" style="color: ${item.statusColor}">${item.statusText}</div>
+                    <button class="delete-btn" onclick="removeFile(${i})" title="移除此文件" ${isProcessing ? 'disabled' : ''}>&times; 删除</button>
+                    
+                    <div class="file-hash">原始指纹: <span id="in-hash-${i}">${item.inHash || '计算中...'}</span></div>
+                    
+                    ${item.encHash ? `<div class="file-hash" style="color: var(--primary);">加密后指纹: <span>${item.encHash}</span></div>` : ''}
+                    ${item.decHash ? `<div class="file-hash" style="color: var(--success);">解密后指纹: <span>${item.decHash}</span></div>` : ''}
+                `;
+                container.appendChild(itemDiv);
+
+                if (!item.inHash) {
+                    item.file.arrayBuffer().then(buffer => calculateSHA256(buffer))
+                    .then(hash => {
+                        item.inHash = hash;
+                        const el = document.getElementById(`in-hash-${i}`);
+                        if (el) el.innerText = hash;
+                    }).catch(() => {
+                        const el = document.getElementById(`in-hash-${i}`);
+                        if (el) el.innerText = "获取失败";
+                    });
+                }
+            });
+        }
+
+        async function deriveKey(password, salt) {
+            const enc = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveKey"]);
+            return crypto.subtle.deriveKey(
+                { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
+                keyMaterial, { name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]
+            );
+        }
+
+        async function processAll(isEncrypt) {
+            const pwdInput = document.getElementById("pwd").value;
+            const btns = document.querySelectorAll('.action-btn');
+
+            if (!pwdInput || currentFiles.length === 0) {
+                showMainStatus("⚠️ 请填写密码并至少添加一个文件", "red");
+                return;
+            }
+
+            isProcessing = true;
+            btns.forEach(btn => btn.disabled = true);
+            renderFileList(); 
+
+            showMainStatus(`⏳ 正在处理 ${currentFiles.length} 个文件，请稍候...`, "var(--text-muted)");
+
+            let successCount = 0;
+            let failCount = 0;
+            
+            let zip = null;
+            if (isEncrypt && currentFiles.length > 1) {
+                if (typeof JSZip === 'undefined') {
+                    showMainStatus("⚠️ 网络不稳定或离线，将放弃ZIP打包，为您逐一输出...", "#F59E0B");
+                    await new Promise(r => setTimeout(r, 1500));
+                } else {
+                    zip = new JSZip();
+                }
+            }
+
+            for (let i = 0; i < currentFiles.length; i++) {
+                const item = currentFiles[i];
+                item.statusText = "处理中...";
+                item.statusColor = "var(--primary)";
+                renderFileList(); 
+
+                try {
+                    const data = await item.file.arrayBuffer();
+                    let result, fileName;
+
+                    if (isEncrypt) {
+                        const salt = crypto.getRandomValues(new Uint8Array(16));
+                        const iv = crypto.getRandomValues(new Uint8Array(12));
+                        const key = await deriveKey(pwdInput, salt);
+                        const cipherText = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data);
+
+                        const out = new Uint8Array(salt.length + iv.length + cipherText.byteLength);
+                        out.set(salt, 0); out.set(iv, salt.length); out.set(new Uint8Array(cipherText), salt.length + iv.length);
+                        
+                        result = out;
+                        fileName = item.file.name + ".enc";
+                    } else {
+                        if (data.byteLength < 28) throw new Error("无效文件");
+                        const buf = new Uint8Array(data);
+                        const salt = buf.slice(0, 16);
+                        const iv = buf.slice(16, 28);
+                        const cipherText = buf.slice(28);
+                        
+                        const key = await deriveKey(pwdInput, salt);
+                        result = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, cipherText);
+                        
+                        fileName = item.file.name.replace(/\.enc$/, "") || "decrypted_" + i;
+                    }
+
+                    const outHash = await calculateSHA256(result);
+                    if (isEncrypt) item.encHash = outHash; else item.decHash = outHash;
+
+                    if (zip) {
+                        zip.file(fileName, result);
+                    } else {
+                        const blob = new Blob([result]);
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = fileName;
+                        a.click();
+                        URL.revokeObjectURL(url);
+
+                        if (currentFiles.length > 1) {
+                            await new Promise(r => setTimeout(r, 400));
+                        }
+                    }
+
+                    item.statusText = "✅ 成功";
+                    item.statusColor = "var(--success)";
+                    successCount++;
+                } catch (error) {
+                    item.statusText = "❌ 失败";
+                    item.statusColor = "red";
+                    failCount++;
+                }
+                renderFileList();
+            }
+
+            if (zip && successCount > 0) {
+                showMainStatus(`⏳ 正在将 ${successCount} 个加密文件打包为 ZIP...`, "var(--primary)");
+                try {
+                    const zipBlob = await zip.generateAsync({ type: "blob", compression: "STORE" });
+                    const zipUrl = URL.createObjectURL(zipBlob);
+                    const a = document.createElement("a");
+                    a.href = zipUrl;
+                    a.download = "Encrypted_Files.zip";
+                    a.click();
+                    URL.revokeObjectURL(zipUrl);
+                } catch (e) {
+                    showMainStatus("❌ ZIP打包失败，可能是文件过大导致内存不足", "red");
+                }
+            }
+
+            isProcessing = false;
+            btns.forEach(btn => btn.disabled = false);
+            renderFileList(); 
+
+            if (failCount === 0) {
+                showMainStatus(`✅ 全部完成！共处理并输出 ${successCount} 个文件。`, "var(--success)");
+            } else {
+                showMainStatus(`⚠️ 处理结束。成功: ${successCount} 个，失败: ${failCount} 个 (密码错误或文件损坏)`, "#f59e0b");
+            }
+        }
+
+        function showMainStatus(text, color) {
+            const statusDiv = document.getElementById("status-main");
+            statusDiv.innerText = text;
+            statusDiv.style.color = color;
+        }
+
+        // 👉 新增：注册 Service Worker (实现 PWA 离线功能)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('✅ ServiceWorker 注册成功，作用域为:', reg.scope))
+                    .catch(err => console.log('❌ ServiceWorker 注册失败:', err));
+            });
+        }
+    </script>
 </body>
 </html>

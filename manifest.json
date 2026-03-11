@@ -1,0 +1,17 @@
+{
+  "name": "AES-256 离线批量加解密工具",
+  "short_name": "加解密工具",
+  "description": "基于 Vibe-Coding 打造的本地纯前端文件加解密神器",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F3F4F6",
+  "theme_color": "#4F46E5",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

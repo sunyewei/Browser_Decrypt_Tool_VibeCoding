@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AES-256 离线批量加解密工具 (Material版)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    
+    <style>
+        /* Material Design 3 Color Tokens */
+        :root {
+            --md-primary: #6750A4;
+            --md-on-primary: #FFFFFF;
+            --md-primary-container: #EADDFF;
+            --md-on-primary-container: #21005D;
+            --md-secondary: #625B71;
+            --md-background: #F4EFF4;
+            --md-surface: #FEF7FF;
+            --md-surface-variant: #E7E0EC;
+            --md-on-surface: #1D1B20;
+            --md-on-surface-variant: #49454F;
+            --md-outline: #79747E;
+            --md-error: #B3261E;
+            --md-success: #146C2E;
+            --md-success-container: #C4EED0;
+            --md-elevation-1: 0px 1px 3px 1px rgba(0,0,0,0.15), 0px 1px 2px 0px rgba(0,0,0,0.3);
+            --md-elevation-2: 0px 2px 6px 2px rgba(0,0,0,0.15), 0px 1px 2px 0px rgba(0,0,0,0.3);
+        }
+
+        body {
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background-color: var(--md-background);
+            color: var(--md-on-surface);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* 右上角 Help 按钮 (Material Chip 风格) */
+        .help-link {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            font-size: 0.875rem;
+            color: var(--md-on-surface-variant);
+            text-decoration: none;
+            font-weight: 500;
+            background-color: var(--md-surface);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--md-outline);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+        .help-link:hover {
+            background-color: var(--md-surface-variant);
+            color: var(--md-on-surface);
+        }
+        .help-link .material-icons-outlined { font-size: 18px; }
+
+        @media (max-width: 600px) {
+            .help-link { top: 16px; right: 16px; padding: 6px 12px; font-size: 0.8rem; }
+        }
+
+        /* 主卡片 (Material Surface) */
+        .container {
+            background-color: var(--md-surface);
+            padding: 32px;
+            border-radius: 24px;
+            box-shadow: var(--md-elevation-1);
+            width: 100%;
+            max-width: 560px;
+            text-align: center;
+            transition: box-shadow 0.3s ease;
+        }
+        .container:hover {
+            box-shadow: var(--md-elevation-2);
+        }
+
+        h2 { 
+            margin-top: 0; 
+            margin-bottom: 24px; 
+            font-weight: 500; 
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: var(--md-primary);
+        }
+
+        .input-group { margin-bottom: 24px; text-align: left; }
+        
+        label { 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            margin-bottom: 8px; 
+            font-size: 0.875rem; 
+            font-weight: 500; 
+            color: var(--md-on-surface-variant); 
+        }
+
+        /* Material Outlined Text Field */
+        input[type="password"] {
+            width: 100%; 
+            padding: 14px 16px; 
+            border: 1px solid var(--md-outline);
+            background-color: transparent;
+            border-radius: 4px; 
+            box-sizing: border-box; 
+            font-size: 1rem; 
+            color: var(--md-on-surface);
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        input[type="password"]:hover { border-color: var(--md-on-surface); }
+        input[type="password"]:focus { 
+            outline: none; 
+            border-color: var(--md-primary); 
+            border-width: 2px;
+            padding: 13px 15px; /* 补偿边框增粗带来的偏移 */
+        }
+
+        /* 密码强度条 */
+        .pwd-strength-container { margin-top: 8px; height: 4px; background-color: var(--md-surface-variant); border-radius: 2px; overflow: hidden; }
+        .pwd-strength-bar { height: 100%; width: 0%; transition: width 0.3s ease, background-color 0.3s ease; }
+        .pwd-text { font-size: 0.75rem; margin-top: 4px; text-align: right; font-weight: 500; }
+
+        /* 拖拽区 (Material 风格) */
+        .drop-zone {
+            width: 100%; padding: 32px 16px; 
+            border: 2px dashed var(--md-outline);
+            border-radius: 12px; box-sizing: border-box; text-align: center;
+            cursor: pointer; transition: all 0.2s ease; 
+            background-color: transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .drop-zone .material-icons-outlined { font-size: 36px; color: var(--md-primary); }
+        .drop-zone:hover, .drop-zone.dragover { 
+            border-color: var(--md-primary); 
+            background-color: var(--md-primary-container); 
+        }
+        .drop-zone p { margin: 0; color: var(--md-on-surface-variant); font-size: 0.875rem; pointer-events: none; font-weight: 500; }
+
+        /* 列表头部 */
+        .list-header {
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-top: 16px; display: none;
+        }
+        .list-header span { font-size: 0.875rem; font-weight: 500; color: var(--md-primary); }
+        
+        /* Material Text Button */
+        .clear-btn {
+            background: none; border: none; color: var(--md-error); font-size: 0.875rem; 
+            cursor: pointer; padding: 6px 8px; font-weight: 500; border-radius: 4px;
+            display: flex; align-items: center; gap: 4px; transition: background 0.2s;
+        }
+        .clear-btn:hover { background-color: rgba(179, 38, 30, 0.08); }
+        .clear-btn .material-icons-outlined { font-size: 16px; }
+
+        /* 文件列表 */
+        .file-list {
+            max-height: 250px; overflow-y: auto; margin-top: 8px;
+            text-align: left; border: 1px solid var(--md-surface-variant); border-radius: 12px;
+            background: transparent; display: none;
+        }
+        
+        .file-item {
+            padding: 12px 16px; border-bottom: 1px solid var(--md-surface-variant); font-size: 0.875rem; position: relative;
+        }
+        .file-item:last-child { border-bottom: none; }
+        
+        .file-name { font-weight: 500; color: var(--md-on-surface); word-break: break-all; margin-bottom: 4px; padding-right: 90px;}
+        .file-hash { font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: var(--md-on-surface-variant); word-break: break-all; margin-bottom: 2px;}
+        
+        .file-status { position: absolute; right: 3.5rem; top: 12px; font-weight: 500; font-size: 0.75rem; transition: color 0.2s ease; display: flex; align-items: center; gap: 4px;}
+        .file-status .material-icons-outlined { font-size: 14px; }
+
+        /* Material Icon Button (删除) */
+        .delete-btn {
+            position: absolute; right: 8px; top: 8px; background: none; border: none; 
+            color: var(--md-error); cursor: pointer; 
+            padding: 6px; border-radius: 50%; line-height: 1; transition: background-color 0.2s;
+        }
+        .delete-btn:hover:not(:disabled) { background-color: rgba(179, 38, 30, 0.08); }
+        .delete-btn:disabled { color: var(--md-outline); cursor: not-allowed; }
+        .delete-btn .material-icons-outlined { font-size: 20px; }
+
+        /* 按钮组 */
+        .btn-group { display: flex; gap: 16px; margin-top: 32px; }
+        
+        /* Material Filled Button */
+        button.action-btn {
+            flex: 1; padding: 12px 24px; border: none; border-radius: 100px; /* 胶囊形 */
+            font-size: 0.95rem; font-weight: 500; font-family: inherit;
+            cursor: pointer; transition: all 0.2s;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+            box-shadow: 0px 1px 2px 0px rgba(0,0,0,0.3), 0px 1px 3px 1px rgba(0,0,0,0.15);
+        }
+        button.action-btn:hover:not(:disabled) {
+            box-shadow: 0px 1px 2px 0px rgba(0,0,0,0.3), 0px 2px 6px 2px rgba(0,0,0,0.15);
+        }
+        button.action-btn:active:not(:disabled) {
+            box-shadow: 0px 1px 2px 0px rgba(0,0,0,0.3), 0px 1px 3px 1px rgba(0,0,0,0.15);
+            transform: scale(0.98);
+        }
+        button.action-btn:disabled { 
+            background-color: rgba(29, 27, 32, 0.12) !important; 
+            color: rgba(29, 27, 32, 0.38) !important;
+            box-shadow: none; cursor: not-allowed; 
+        }
+        
+        .btn-encrypt { background-color: var(--md-primary); color: var(--md-on-primary); }
+        .btn-encrypt:hover:not(:disabled) { background-color: #725FA6; /* M3 hover state overlay */ }
+        
+        .btn-decrypt { background-color: var(--md-success); color: white; }
+        .btn-decrypt:hover:not(:disabled) { background-color: #197B34; }
+
+        .status-main { 
+            margin-top: 24px; font-size: 0.9rem; min-height: 20px; 
+            font-weight: 500; transition: color 0.2s ease;
+            display: flex; justify-content: center; align-items: center; gap: 6px;
+        }
+
+        /* 底部版权 */
+        .footer-credit {
+            margin-top: 24px;
+            font-size: 0.8rem;
+            color: var(--md-on-surface-variant);
+            text-align: center;
+            font-weight: 400;
+        }
+        .footer-credit a {
+            color: var(--md-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .footer-credit a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <a href="https://github.com/你的GitHub用户名/你的仓库名#readme" target="_blank" class="help-link">
+        <span class="material-icons-outlined">help_outline</span>
+        使用说明
+    </a>
+
+    <div class="container">
+        <h2><span class="material-icons-outlined" style="font-size: 28px;">security</span> 文件质感加解密工具</h2>
+        
+        <div class="input-group">
+            <label for="pwd"><span class="material-icons-outlined" style="font-size: 18px;">key</span> 加解密密码</label>
+            <input type="password" id="pwd" placeholder="请输入高强度密码">
+            <div class="pwd-strength-container"><div class="pwd-strength-bar" id="pwd-bar"></div></div>
+            <div class="pwd-text" id="pwd-text"></div>
+        </div>
+
+        <div class="input-group">
+            <label><span class="material-icons-outlined" style="font-size: 18px;">folder_open</span> 选择文件 (支持多次拖拽累加)</label>
+            <div id="drop-zone" class="drop-zone">
+                <span class="material-icons-outlined">cloud_upload</span>
+                <p id="drop-text">点击选择文件，或框选多个拖拽到此处</p>
+                <input type="file" id="file" multiple style="display: none;">
+            </div>
+            
+            <div class="list-header" id="list-header">
+                <span id="file-count">已添加 0 个文件</span>
+                <button class="clear-btn" onclick="clearFiles()">
+                    <span class="material-icons-outlined">delete_sweep</span>清空
+                </button>
+            </div>
+            <div id="file-list" class="file-list"></div>
+        </div>
+
+        <div class="btn-group">
+            <button class="action-btn btn-encrypt" id="btn-enc" onclick="processAll(true)">
+                <span class="material-icons-outlined">lock</span>批量加密
+            </button>
+            <button class="action-btn btn-decrypt" id="btn-dec" onclick="processAll(false)">
+                <span class="material-icons-outlined">lock_open</span>批量解密
+            </button>
+        </div>
+
+        <div class="status-main" id="status-main"></div>
+    </div>
+
+    <div class="footer-credit">
+        Code with <span class="material-icons-outlined" style="font-size: 12px; vertical-align: middle;">computer</span> by <a href="https://github.com/你的GitHub用户名" target="_blank">Yewei Sun</a> | Vibe-Coding 呈现
+    </div>
+
+    <script>
+        let currentFiles = []; 
+        let isProcessing = false;
+
+        document.getElementById('pwd').addEventListener('input', function(e) {
+            const pwd = e.target.value;
+            const bar = document.getElementById('pwd-bar');
+            const text = document.getElementById('pwd-text');
+            if (pwd.length === 0) { bar.style.width = '0'; text.innerText = ''; return; }
+
+            let score = 0;
+            if (pwd.length >= 8) score++;
+            if (pwd.length >= 12) score++;
+            if (/[A-Z]/.test(pwd)) score++;
+            if (/[a-z]/.test(pwd)) score++;
+            if (/[0-9]/.test(pwd)) score++;
+            if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+            if (score <= 2) {
+                bar.style.width = '33%'; bar.style.backgroundColor = 'var(--md-error)'; text.innerText = '强度: 弱'; text.style.color = 'var(--md-error)';
+            } else if (score <= 4) {
+                bar.style.width = '66%'; bar.style.backgroundColor = '#E6A23C'; text.innerText = '强度: 中等'; text.style.color = '#E6A23C';
+            } else {
+                bar.style.width = '100%'; bar.style.backgroundColor = 'var(--md-success)'; text.innerText = '强度: 高'; text.style.color = 'var(--md-success)';
+            }
+        });
+
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            document.body.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); });
+        });
+
+        dropZone.addEventListener('click', () => { if (!isProcessing) fileInput.click(); });
+        dropZone.addEventListener('dragover', () => { if (!isProcessing) dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
+        dropZone.addEventListener('drop', (e) => {
+            dropZone.classList.remove('dragover');
+            if (isProcessing) return;
+            const droppedFiles = e.dataTransfer ? Array.from(e.dataTransfer.files) : [];
+            if (droppedFiles.length > 0) addFiles(droppedFiles);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) { addFiles(Array.from(e.target.files)); fileInput.value = ''; }
+        });
+
+        function addFiles(newFiles) {
+            const validFiles = newFiles.filter(f => f.size > 0 || f.name.includes('.'));
+            validFiles.forEach(f => {
+                currentFiles.push({
+                    file: f, inHash: null, encHash: null, decHash: null,
+                    statusText: "等待中", statusColor: "var(--md-on-surface-variant)", icon: "schedule"
+                });
+            });
+            updateUIState();
+            renderFileList();
+            showMainStatus(`✅ 已添加 ${validFiles.length} 个文件`, "var(--md-success)");
+        }
+
+        function removeFile(index) {
+            if (isProcessing) return;
+            const removedName = currentFiles[index].file.name;
+            currentFiles.splice(index, 1);
+            updateUIState();
+            if (currentFiles.length === 0) clearFiles(true);
+            else renderFileList();
+            showMainStatus(`✅ 已移除: ${removedName}`, "var(--md-success)");
+        }
+
+        function clearFiles(keepStatus = false) {
+            if (isProcessing) return;
+            currentFiles = [];
+            updateUIState();
+            document.getElementById('file-list').innerHTML = '';
+            if (!keepStatus) showMainStatus("✅ 列表已清空", "var(--md-success)");
+        }
+
+        function updateUIState() {
+            document.getElementById('file-count').innerText = `已添加 ${currentFiles.length} 个文件`;
+            document.getElementById('list-header').style.display = currentFiles.length > 0 ? 'flex' : 'none';
+            document.getElementById('file-list').style.display = currentFiles.length > 0 ? 'block' : 'none';
+            document.getElementById('drop-text').innerText = currentFiles.length > 0 ? "可继续拖拽添加..." : "点击选择文件，或框选多个拖拽到此处";
+        }
+
+        async function calculateSHA256(arrayBuffer) {
+            const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function renderFileList() {
+            const container = document.getElementById('file-list');
+            container.innerHTML = '';
+            
+            currentFiles.forEach((item, i) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'file-item';
+                
+                itemDiv.innerHTML = `
+                    <div class="file-name">${i + 1}. ${item.file.name}</div>
+                    <div class="file-status" style="color: ${item.statusColor}">
+                        <span class="material-icons-outlined">${item.icon}</span> ${item.statusText}
+                    </div>
+                    <button class="delete-btn" onclick="removeFile(${i})" title="移除此文件" ${isProcessing ? 'disabled' : ''}>
+                        <span class="material-icons-outlined">close</span>
+                    </button>
+                    
+                    <div class="file-hash">原始指纹: <span id="in-hash-${i}">${item.inHash || '计算中...'}</span></div>
+                    
+                    ${item.encHash ? `<div class="file-hash" style="color: var(--md-primary);">加密后指纹: <span>${item.encHash}</span></div>` : ''}
+                    ${item.decHash ? `<div class="file-hash" style="color: var(--md-success);">解密后指纹: <span>${item.decHash}</span></div>` : ''}
+                `;
+                container.appendChild(itemDiv);
+
+                if (!item.inHash) {
+                    item.file.arrayBuffer().then(buffer => calculateSHA256(buffer))
+                    .then(hash => {
+                        item.inHash = hash;
+                        const el = document.getElementById(`in-hash-${i}`);
+                        if (el) el.innerText = hash;
+                    }).catch(() => {
+                        const el = document.getElementById(`in-hash-${i}`);
+                        if (el) el.innerText = "获取失败";
+                    });
+                }
+            });
+        }
+
+        async function deriveKey(password, salt) {
+            const enc = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveKey"]);
+            return crypto.subtle.deriveKey(
+                { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
+                keyMaterial, { name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]
+            );
+        }
+
+        async function processAll(isEncrypt) {
+            const pwdInput = document.getElementById("pwd").value;
+            const btns = document.querySelectorAll('.action-btn');
+
+            if (!pwdInput || currentFiles.length === 0) {
+                showMainStatus(`<span class="material-icons-outlined">warning</span> 请填写密码并至少添加一个文件`, "var(--md-error)");
+                return;
+            }
+
+            isProcessing = true;
+            btns.forEach(btn => btn.disabled = true);
+            renderFileList(); 
+
+            showMainStatus(`<span class="material-icons-outlined" style="animation: spin 2s linear infinite;">hourglass_empty</span> 正在处理 ${currentFiles.length} 个文件，请稍候...`, "var(--md-on-surface-variant)");
+
+            let successCount = 0;
+            let failCount = 0;
+            
+            let zip = null;
+            if (isEncrypt && currentFiles.length > 1) {
+                if (typeof JSZip === 'undefined') {
+                    showMainStatus(`<span class="material-icons-outlined">wifi_off</span> 网络离线，放弃ZIP打包，逐一输出...`, "#E6A23C");
+                    await new Promise(r => setTimeout(r, 1500));
+                } else {
+                    zip = new JSZip();
+                }
+            }
+
+            for (let i = 0; i < currentFiles.length; i++) {
+                const item = currentFiles[i];
+                item.statusText = "处理中";
+                item.icon = "sync";
+                item.statusColor = "var(--md-primary)";
+                renderFileList(); 
+
+                try {
+                    const data = await item.file.arrayBuffer();
+                    let result, fileName;
+
+                    if (isEncrypt) {
+                        const salt = crypto.getRandomValues(new Uint8Array(16));
+                        const iv = crypto.getRandomValues(new Uint8Array(12));
+                        const key = await deriveKey(pwdInput, salt);
+                        const cipherText = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data);
+
+                        const out = new Uint8Array(salt.length + iv.length + cipherText.byteLength);
+                        out.set(salt, 0); out.set(iv, salt.length); out.set(new Uint8Array(cipherText), salt.length + iv.length);
+                        
+                        result = out;
+                        fileName = item.file.name + ".enc";
+                    } else {
+                        if (data.byteLength < 28) throw new Error("无效文件");
+                        const buf = new Uint8Array(data);
+                        const salt = buf.slice(0, 16);
+                        const iv = buf.slice(16, 28);
+                        const cipherText = buf.slice(28);
+                        
+                        const key = await deriveKey(pwdInput, salt);
+                        result = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, cipherText);
+                        
+                        fileName = item.file.name.replace(/\.enc$/, "") || "decrypted_" + i;
+                    }
+
+                    const outHash = await calculateSHA256(result);
+                    if (isEncrypt) item.encHash = outHash; else item.decHash = outHash;
+
+                    if (zip) {
+                        zip.file(fileName, result);
+                    } else {
+                        const blob = new Blob([result]);
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = fileName;
+                        a.click();
+                        URL.revokeObjectURL(url);
+
+                        if (currentFiles.length > 1) await new Promise(r => setTimeout(r, 400));
+                    }
+
+                    item.statusText = "成功";
+                    item.icon = "check_circle";
+                    item.statusColor = "var(--md-success)";
+                    successCount++;
+                } catch (error) {
+                    item.statusText = "失败";
+                    item.icon = "error";
+                    item.statusColor = "var(--md-error)";
+                    failCount++;
+                }
+                renderFileList();
+            }
+
+            if (zip && successCount > 0) {
+                showMainStatus(`<span class="material-icons-outlined">archive</span> 正在打包 ZIP...`, "var(--md-primary)");
+                try {
+                    const zipBlob = await zip.generateAsync({ type: "blob", compression: "STORE" });
+                    const zipUrl = URL.createObjectURL(zipBlob);
+                    const a = document.createElement("a");
+                    a.href = zipUrl;
+                    a.download = "Encrypted_Files.zip";
+                    a.click();
+                    URL.revokeObjectURL(zipUrl);
+                } catch (e) {
+                    showMainStatus(`<span class="material-icons-outlined">error</span> ZIP打包失败`, "var(--md-error)");
+                }
+            }
+
+            isProcessing = false;
+            btns.forEach(btn => btn.disabled = false);
+            renderFileList(); 
+
+            if (failCount === 0) {
+                showMainStatus(`<span class="material-icons-outlined">task_alt</span> 全部完成！输出 ${successCount} 个文件。`, "var(--md-success)");
+            } else {
+                showMainStatus(`<span class="material-icons-outlined">warning</span> 处理结束。成功: ${successCount}，失败: ${failCount}`, "#E6A23C");
+            }
+        }
+
+        function showMainStatus(htmlText, color) {
+            const statusDiv = document.getElementById("status-main");
+            statusDiv.innerHTML = htmlText;
+            statusDiv.style.color = color;
+        }
+    </script>
+</body>
+</html>
