@@ -85,7 +85,7 @@
 - **2026年3月9日**
   - 项目构思与需求分析，确定核心功能和技术栈
   - 初步设计界面原型，规划用户交互流程
-  - 搭建aes256算法核心部分
+  - 搭建aes256算法
 
 - **2026年3月10日**
   - 项目初始化，创建基础仓库结构
@@ -98,7 +98,11 @@
   - 更新decrypt_tool_V2.html，修正使用说明链接和作者信息显示
   - 完善README.md，新增密码推导原理详细说明，增强安全性解释部分
 
-
+- **2026年3月11日**
+  - 新增Material UI测试版本文件（decrypt_tool_MaterialUI_Test.html），探索现代化UI框架集成
+  - 添加PWA相关文件：manifest.json（应用清单）、sw.js（Service Worker）、icon.svg（应用图标）
+  - 优化index.html，改进入口页面功能和用户体验
+  - 完善README.md，补充详细的项目开发时间线，记录完整开发历程
 
 ## 📄 开源协议 (License)
 
